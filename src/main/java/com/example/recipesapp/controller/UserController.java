@@ -1,49 +1,94 @@
 package com.example.recipesapp.controller;
 
+import com.example.recipesapp.dto.MessageResponse;
+import com.example.recipesapp.dto.RegisterRequest;
+import com.example.recipesapp.dto.UpdateUserRequest;
+import com.example.recipesapp.dto.UserResponse;
 import com.example.recipesapp.model.User;
 import com.example.recipesapp.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@RestController // Indica que esta clase será un controlador REST
-@RequestMapping("/api/users") // Ruta base para todos los endpoints
+/*
+ * UserController
+ * ---------------
+ * Controlador REST para la gestión de usuarios.
+ * Endpoints:
+ *   - POST /api/users         → Crear un nuevo usuario.
+ *   - GET /api/users          → Obtener la lista de todos los usuarios.
+ *   - GET /api/users/{id}     → Obtener un usuario por su ID.
+ *   - PUT /api/users/{id}     → Actualizar los datos de un usuario existente.
+ *   - DELETE /api/users/{id}  → Eliminar un usuario por su ID.
+ */
+
+@RestController
+@RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    // Crear un usuario
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // Crear un nuevo usuario
     @PostMapping
-    public User createUser(@RequestBody User username) {
-        return userService.saveUser(username);
+    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest request) {
+        try {
+            User created = userService.registerUser(request.getUsername(), request.getPassword(), request.getEmail());
+            return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.fromEntity(created));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new MessageResponse(ex.getMessage()));
+        }
     }
 
-    // Listar todos los usuarios
+    // Obtener todos los usuarios
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers().stream()
+            .map(UserResponse::fromEntity)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(users);
     }
 
-    // Buscar usuario por ID
+    // Obtener un usuario por su ID
     @GetMapping("/{id}")
-    public Optional<User> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> userOptional = userService.getUserById(id);
+        if (userOptional.isPresent()) {
+            return ResponseEntity.ok(UserResponse.fromEntity(userOptional.get()));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new MessageResponse("Usuario con ID " + id + " no encontrado"));
     }
 
-    // Actualizar un usuario
+    // Actualizar usuario existente
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id); // Nos aseguramos de actualizar el usuario correcto
-        return userService.saveUser(user);
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
+        try {
+            User updated = userService.updateUser(id, request.getUsername(), request.getEmail());
+            return ResponseEntity.ok(UserResponse.fromEntity(updated));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new MessageResponse(ex.getMessage()));
+        }
     }
 
-    // Eliminar un usuario
+    // Eliminar usuario por ID
     @DeleteMapping("/{id}")
-    public String deleteUser(@PathVariable Long id) {
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return "Usuario con id " + id + " eliminado correctamente.";
+        return ResponseEntity.ok(new MessageResponse("Usuario con id " + id + " eliminado correctamente"));
     }
 }
