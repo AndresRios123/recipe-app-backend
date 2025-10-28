@@ -5,10 +5,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.HashSet;
@@ -45,6 +48,10 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RecipeIngredient> ingredients = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdBy;
+
     public Recipe() {
     }
 
@@ -54,7 +61,8 @@ public class Recipe {
         String instructions,
         Integer prepTimeMinutes,
         Difficulty difficulty,
-        String imageUrl
+        String imageUrl,
+        User createdBy
     ) {
         this.name = name;
         this.description = description;
@@ -62,6 +70,7 @@ public class Recipe {
         this.prepTimeMinutes = prepTimeMinutes;
         this.difficulty = difficulty;
         this.imageUrl = imageUrl;
+        this.createdBy = createdBy;
     }
 
     public Long getId() {
@@ -122,6 +131,14 @@ public class Recipe {
 
     public void setIngredients(Set<RecipeIngredient> ingredients) {
         this.ingredients = ingredients;
+    }
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
     }
 
     public void addIngredient(RecipeIngredient recipeIngredient) {

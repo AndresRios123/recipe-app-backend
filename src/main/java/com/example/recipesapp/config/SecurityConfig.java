@@ -1,6 +1,7 @@
 package com.example.recipesapp.config;
 
 import com.example.recipesapp.security.CustomUserDetailsService;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +14,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /*
  * SecurityConfig
@@ -77,6 +82,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // Deshabilitamos CSRF porque normalmente en APIs REST no hay formularios
             // y el cliente (por ejemplo, Postman/Front SPA) maneja la autenticación.
             .csrf(AbstractHttpConfigurer::disable)
@@ -92,7 +98,9 @@ public class SecurityConfig {
             // - Estas rutas de auth son públicas.
             // - Cualquier otra requiere estar autenticado.
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/status").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/recipes", "/api/recipes/**").permitAll()
                 .anyRequest().authenticated()
             )
 
@@ -114,5 +122,22 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    /**
+     * Configuración CORS para permitir a la SPA (localhost:5173) consumir la API con cookies.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

@@ -14,6 +14,7 @@ public record RecipeResponse(
     Integer prepTimeMinutes,
     Difficulty difficulty,
     String imageUrl,
+    RecipeAuthorResponse author,
     List<RecipeIngredientResponse> ingredients
 ) {
 }

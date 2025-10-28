@@ -35,6 +35,11 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.findAll());
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<List<RecipeResponse>> getMyRecipes() {
+        return ResponseEntity.ok(recipeService.findMine());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(recipeService.findById(id));

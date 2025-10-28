@@ -1,13 +1,16 @@
 package com.example.recipesapp.service;
 
+import com.example.recipesapp.dto.RecipeAuthorResponse;
 import com.example.recipesapp.dto.RecipeIngredientRequest;
 import com.example.recipesapp.dto.RecipeIngredientResponse;
 import com.example.recipesapp.dto.RecipeRequest;
 import com.example.recipesapp.dto.RecipeResponse;
+import com.example.recipesapp.exception.AccessDeniedException;
 import com.example.recipesapp.exception.ResourceNotFoundException;
 import com.example.recipesapp.model.Ingredient;
 import com.example.recipesapp.model.Recipe;
 import com.example.recipesapp.model.RecipeIngredient;
+import com.example.recipesapp.model.User;
 import com.example.recipesapp.repository.IngredientRepository;
 import com.example.recipesapp.repository.RecipeRepository;
 import java.util.List;
@@ -24,18 +27,29 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
+    private final CurrentUserService currentUserService;
 
     public RecipeService(
         RecipeRepository recipeRepository,
-        IngredientRepository ingredientRepository
+        IngredientRepository ingredientRepository,
+        CurrentUserService currentUserService
     ) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional(readOnly = true)
     public List<RecipeResponse> findAll() {
         return recipeRepository.findAll().stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecipeResponse> findMine() {
+        User current = currentUserService.getCurrentUser();
+        return recipeRepository.findByCreatedBy(current).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
@@ -48,14 +62,15 @@ public class RecipeService {
     }
 
     public RecipeResponse create(RecipeRequest request) {
-        Recipe recipe = new Recipe(
-            request.name(),
-            request.description(),
-            request.instructions(),
-            request.prepTimeMinutes(),
-            request.difficulty(),
-            request.imageUrl()
-        );
+        User current = currentUserService.getCurrentUser();
+        Recipe recipe = new Recipe();
+        recipe.setName(request.name());
+        recipe.setDescription(request.description());
+        recipe.setInstructions(request.instructions());
+        recipe.setPrepTimeMinutes(request.prepTimeMinutes());
+        recipe.setDifficulty(request.difficulty());
+        recipe.setImageUrl(request.imageUrl());
+        recipe.setCreatedBy(current);
 
         mapIngredientRequests(recipe, request.ingredients());
 
@@ -66,6 +81,7 @@ public class RecipeService {
     public RecipeResponse update(Long id, RecipeRequest request) {
         Recipe recipe = recipeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Receta con id " + id + " no encontrada"));
+        enforceOwnership(recipe);
 
         recipe.setName(request.name());
         recipe.setDescription(request.description());
@@ -83,6 +99,7 @@ public class RecipeService {
     public void delete(Long id) {
         Recipe recipe = recipeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Receta con id " + id + " no encontrada"));
+        enforceOwnership(recipe);
         recipeRepository.delete(recipe);
     }
 
@@ -114,6 +131,12 @@ public class RecipeService {
             ))
             .collect(Collectors.toList());
 
+        RecipeAuthorResponse authorDto = new RecipeAuthorResponse(
+            recipe.getCreatedBy().getId(),
+            recipe.getCreatedBy().getUsername(),
+            recipe.getCreatedBy().getEmail()
+        );
+
         return new RecipeResponse(
             recipe.getId(),
             recipe.getName(),
@@ -122,7 +145,18 @@ public class RecipeService {
             recipe.getPrepTimeMinutes(),
             recipe.getDifficulty(),
             recipe.getImageUrl(),
+            authorDto,
             ingredientResponses
         );
+    }
+
+    /**
+     * Verifica que la receta pertenezca al usuario autenticado.
+     */
+    private void enforceOwnership(Recipe recipe) {
+        User current = currentUserService.getCurrentUser();
+        if (!recipe.getCreatedBy().getId().equals(current.getId())) {
+            throw new AccessDeniedException("No tienes permisos para modificar esta receta");
+        }
     }
 }
