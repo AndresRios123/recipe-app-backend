@@ -1,4 +1,4 @@
-@package com.example.recipesapp.config;
+package com.example.recipesapp.config;
 
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,4 +28,3 @@ public class WebCorsConfig {
         return new CorsFilter(source);
     }
 }
-
