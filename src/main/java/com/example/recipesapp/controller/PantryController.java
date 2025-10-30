@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/pantry")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "https://recipes-app-front.vercel.app"}, allowCredentials = "true")
 public class PantryController {
 
     private final PantryService pantryService;
