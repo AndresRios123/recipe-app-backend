@@ -11,7 +11,7 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class WebCorsConfig {
 
-    @Value("")
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String[] allowedOrigins;
 
     @Bean
