@@ -48,10 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(
-    origins = {"http://localhost:5173", "https://recipes-app-front.vercel.app"},
-    allowCredentials = "true"
-)
+@CrossOrigin(allowCredentials = "true")
 public class AuthController {
 
     private final UserService userService;
