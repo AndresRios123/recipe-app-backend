@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 /*
  * SecurityConfig
@@ -101,5 +102,15 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    /**
+     * HandlerMappingIntrospector es requerido por algunos componentes de Spring Security
+     * cuando la autoconfiguración MVC no lo registra automáticamente (por ejemplo en deployments ligeros).
+     * Lo exponemos manualmente para evitar fallos al arrancar en plataformas como Railway.
+     */
+    @Bean
+    public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+        return new HandlerMappingIntrospector();
     }
 }
