@@ -95,8 +95,7 @@ public class SecurityConfig {
         List<String> origins = allowedOrigins.isEmpty()
             ? List.of("http://localhost:5173")
             : allowedOrigins;
-        boolean hasWildcard = origins.stream().anyMatch(origin -> origin.contains("*"));
-        if (hasWildcard) {
+        if (origins.contains("*")) {
             configuration.setAllowedOriginPatterns(origins);
         } else {
             configuration.setAllowedOrigins(origins);
