@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,7 +17,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 /*
  * SecurityConfig
@@ -105,14 +103,4 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * HandlerMappingIntrospector es requerido por algunos componentes de Spring Security
-     * cuando la autoconfiguración MVC no lo registra automáticamente (por ejemplo en deployments ligeros).
-     * Lo exponemos manualmente para evitar fallos al arrancar en plataformas como Railway.
-     */
-    @Bean
-    @ConditionalOnMissingBean(name = "mvcHandlerMappingIntrospector")
-    public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
-        return new HandlerMappingIntrospector();
-    }
 }
