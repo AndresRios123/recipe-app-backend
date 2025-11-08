@@ -10,15 +10,13 @@ import com.example.recipesapp.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -52,11 +50,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
-    private final AuthenticationManager authenticationManager;
 
-    public AuthController(UserService userService, AuthenticationManager authenticationManager) {
+    public AuthController(UserService userService) {
         this.userService = userService;
-        this.authenticationManager = authenticationManager;
     }
 
     // Registro de nuevo usuario
@@ -82,30 +78,32 @@ public class AuthController {
         @Valid @RequestBody LoginRequest loginRequest,
         HttpServletRequest request
     ) {
-        // Token de autenticación con username y password
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+        boolean credentialsValid = userService.authenticateUser(
             loginRequest.getUsername(),
             loginRequest.getPassword()
         );
 
-        try {
-            // Autenticamos las credenciales con Spring Security
-            Authentication authentication = authenticationManager.authenticate(authToken);
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-
-            // Creamos sesión HTTP y guardamos información de seguridad
-            HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            session.setAttribute("username", authentication.getName());
-            session.setMaxInactiveInterval(30 * 60); // 30 minutos
-
-            return ResponseEntity.ok(new MessageResponse("Login exitoso. Bienvenido " + authentication.getName()));
-        } catch (AuthenticationException ex) {
+        if (!credentialsValid) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new MessageResponse("Credenciales incorrectas"));
         }
+
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            loginRequest.getUsername(),
+            null,
+            Collections.emptyList()
+        );
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        HttpSession session = request.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        session.setAttribute("username", loginRequest.getUsername());
+        session.setMaxInactiveInterval(30 * 60); // 30 minutos
+
+        return ResponseEntity.ok(new MessageResponse("Login exitoso. Bienvenido " + loginRequest.getUsername()));
     }
 
     // Cierre de sesión
