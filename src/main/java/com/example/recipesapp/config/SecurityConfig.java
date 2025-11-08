@@ -111,7 +111,7 @@ public class SecurityConfig {
      * Lo exponemos manualmente para evitar fallos al arrancar en plataformas como Railway.
      */
     @Bean
-    @ConditionalOnMissingBean(HandlerMappingIntrospector.class)
+    @ConditionalOnMissingBean(name = "mvcHandlerMappingIntrospector")
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
     }
