@@ -32,7 +32,7 @@ public class Recipe {
     private String description;
 
     @Lob
-    @Column(nullable = false)
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String instructions;
 
     @Column(name = "prep_time_minutes")
