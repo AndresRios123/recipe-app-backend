@@ -13,6 +13,7 @@ import com.example.recipesapp.model.RecipeIngredient;
 import com.example.recipesapp.model.User;
 import com.example.recipesapp.repository.IngredientRepository;
 import com.example.recipesapp.repository.RecipeRepository;
+import com.example.recipesapp.service.factory.RecipeFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -28,15 +29,18 @@ public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
     private final CurrentUserService currentUserService;
+    private final RecipeFactory recipeFactory;
 
     public RecipeService(
         RecipeRepository recipeRepository,
         IngredientRepository ingredientRepository,
-        CurrentUserService currentUserService
+        CurrentUserService currentUserService,
+        RecipeFactory recipeFactory
     ) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
         this.currentUserService = currentUserService;
+        this.recipeFactory = recipeFactory;
     }
 
     @Transactional(readOnly = true)
@@ -63,14 +67,8 @@ public class RecipeService {
 
     public RecipeResponse create(RecipeRequest request) {
         User current = currentUserService.getCurrentUser();
-        Recipe recipe = new Recipe();
-        recipe.setName(request.name());
-        recipe.setDescription(request.description());
-        recipe.setInstructions(request.instructions());
-        recipe.setPrepTimeMinutes(request.prepTimeMinutes());
-        recipe.setDifficulty(request.difficulty());
-        recipe.setImageUrl(request.imageUrl());
-        recipe.setCreatedBy(current);
+        // Factory Method: delega la creacion del agregado a RecipeFactory.
+        Recipe recipe = recipeFactory.createFromRequest(request, current);
 
         mapIngredientRequests(recipe, request.ingredients());
 
@@ -83,12 +81,8 @@ public class RecipeService {
             .orElseThrow(() -> new ResourceNotFoundException("Receta con id " + id + " no encontrada"));
         enforceOwnership(recipe);
 
-        recipe.setName(request.name());
-        recipe.setDescription(request.description());
-        recipe.setInstructions(request.instructions());
-        recipe.setPrepTimeMinutes(request.prepTimeMinutes());
-        recipe.setDifficulty(request.difficulty());
-        recipe.setImageUrl(request.imageUrl());
+        // Factory reutilizada para mantener consistencia cuando se actualiza un agregado existente.
+        recipeFactory.applyUpdates(recipe, request);
 
         recipe.getIngredients().clear();
         mapIngredientRequests(recipe, request.ingredients());

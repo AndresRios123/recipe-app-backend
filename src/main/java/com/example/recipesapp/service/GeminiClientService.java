@@ -3,6 +3,7 @@ package com.example.recipesapp.service;
 import com.example.recipesapp.exception.AiServiceException;
 import java.net.URI;
 import java.util.List;
+import com.example.recipesapp.service.ai.AiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +19,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * Encapsula la comunicacion con el SDK oficial de Gemini.
  */
-@Service
-public class GeminiClientService {
+@Service("geminiAiClient")
+public class GeminiClientService implements AiClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeminiClientService.class);
 
@@ -45,6 +46,7 @@ public class GeminiClientService {
             .build();
     }
 
+    @Override
     public String generateContent(String prompt) {
         try {
             URI uri = UriComponentsBuilder.fromHttpUrl(apiUrl)

@@ -151,6 +151,64 @@ public class Recipe {
         recipeIngredient.setRecipe(null);
     }
 
+    /**
+     * Builder pattern: permite crear instancias controlando los campos opcionales.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+
+        private final Recipe instance;
+
+        private Builder() {
+            this.instance = new Recipe();
+        }
+
+        public Builder withName(String name) {
+            instance.setName(name);
+            return this;
+        }
+
+        public Builder withDescription(String description) {
+            instance.setDescription(description);
+            return this;
+        }
+
+        public Builder withInstructions(String instructions) {
+            instance.setInstructions(instructions);
+            return this;
+        }
+
+        public Builder withPrepTimeMinutes(Integer prepTimeMinutes) {
+            instance.setPrepTimeMinutes(prepTimeMinutes);
+            return this;
+        }
+
+        public Builder withDifficulty(Difficulty difficulty) {
+            instance.setDifficulty(difficulty);
+            return this;
+        }
+
+        public Builder withImageUrl(String imageUrl) {
+            instance.setImageUrl(imageUrl);
+            return this;
+        }
+
+        public Builder withCreatedBy(User createdBy) {
+            instance.setCreatedBy(createdBy);
+            return this;
+        }
+
+        public Recipe build() {
+            if (instance.getIngredients() == null) {
+                instance.setIngredients(new HashSet<>());
+            }
+            return instance;
+        }
+    }
+
     public enum Difficulty {
         EASY,
         MEDIUM,

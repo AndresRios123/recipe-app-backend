@@ -15,6 +15,7 @@ import com.example.recipesapp.repository.IngredientCategoryRepository;
 import com.example.recipesapp.repository.IngredientRepository;
 import com.example.recipesapp.repository.PantryItemRepository;
 import com.example.recipesapp.repository.RecipeRepository;
+import com.example.recipesapp.service.ai.AiClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,7 +49,8 @@ public class RecommendationService {
     private final IngredientRepository ingredientRepository;
     private final IngredientCategoryRepository categoryRepository;
     private final RecipeService recipeService;
-    private final GeminiClientService geminiClientService;
+    // Strategy pattern: AiClient permite intercambiar proveedores de IA sin tocar este servicio.
+    private final AiClient aiClient;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,7 +61,7 @@ public class RecommendationService {
         IngredientRepository ingredientRepository,
         IngredientCategoryRepository categoryRepository,
         RecipeService recipeService,
-        GeminiClientService geminiClientService
+        AiClient aiClient
     ) {
         this.currentUserService = currentUserService;
         this.pantryItemRepository = pantryItemRepository;
@@ -67,7 +69,7 @@ public class RecommendationService {
         this.ingredientRepository = ingredientRepository;
         this.categoryRepository = categoryRepository;
         this.recipeService = recipeService;
-        this.geminiClientService = geminiClientService;
+        this.aiClient = aiClient;
     }
 
     public List<RecommendationResponse> generateRecommendationsForCurrentUser() {
@@ -77,7 +79,7 @@ public class RecommendationService {
         String prompt = buildGeminiPrompt(pantryItems);
         LOGGER.debug("Gemini prompt: {}", prompt);
 
-        String rawResponse = geminiClientService.generateContent(prompt);
+        String rawResponse = aiClient.generateContent(prompt);
         List<RecommendationResponse> parsed = parseGeminiResponse(rawResponse);
         if (parsed.isEmpty()) {
             throw new AiServiceException("La API de Gemini no devolvio recetas en la respuesta.");
