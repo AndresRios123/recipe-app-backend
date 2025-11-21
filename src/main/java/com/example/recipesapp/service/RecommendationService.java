@@ -74,7 +74,11 @@ public class RecommendationService {
 
     public List<RecommendationResponse> generateRecommendationsForCurrentUser() {
         User current = currentUserService.getCurrentUser();
-        List<PantryItem> pantryItems = pantryItemRepository.findByUser(current);
+        return generateRecommendationsForUser(current);
+    }
+
+    public List<RecommendationResponse> generateRecommendationsForUser(User user) {
+        List<PantryItem> pantryItems = pantryItemRepository.findByUser(user);
 
         String prompt = buildGeminiPrompt(pantryItems);
         LOGGER.debug("Gemini prompt: {}", prompt);

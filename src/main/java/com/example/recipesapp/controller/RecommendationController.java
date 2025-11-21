@@ -2,6 +2,9 @@ package com.example.recipesapp.controller;
 
 import com.example.recipesapp.dto.RecommendationResponse;
 import com.example.recipesapp.dto.SaveRecommendationRequest;
+import com.example.recipesapp.dto.RecommendationJobResponse;
+import com.example.recipesapp.service.job.RecommendationJobService;
+import com.example.recipesapp.service.job.RecommendationJobService.JobResult;
 import com.example.recipesapp.service.RecommendationService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,9 +25,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
+    private final RecommendationJobService recommendationJobService;
 
-    public RecommendationController(RecommendationService recommendationService) {
+    public RecommendationController(
+        RecommendationService recommendationService,
+        RecommendationJobService recommendationJobService
+    ) {
         this.recommendationService = recommendationService;
+        this.recommendationJobService = recommendationJobService;
     }
 
     @GetMapping
@@ -36,5 +44,32 @@ public class RecommendationController {
     public ResponseEntity<?> saveRecommendation(@RequestBody SaveRecommendationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(recommendationService.saveRecommendation(request));
+    }
+
+    @PostMapping("/jobs")
+    public ResponseEntity<RecommendationJobResponse> createJob() {
+        JobResult job = recommendationJobService.createJob();
+        RecommendationJobResponse response = new RecommendationJobResponse(
+            job.getJobId(),
+            job.getStatus(),
+            job.getRecommendations(),
+            job.getErrorMessage()
+        );
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @GetMapping("/jobs/{jobId}")
+    public ResponseEntity<RecommendationJobResponse> getJob(@PathVariable String jobId) {
+        JobResult job = recommendationJobService.getJob(jobId);
+        if (job == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        RecommendationJobResponse response = new RecommendationJobResponse(
+            job.getJobId(),
+            job.getStatus(),
+            job.getRecommendations(),
+            job.getErrorMessage()
+        );
+        return ResponseEntity.ok(response);
     }
 }
